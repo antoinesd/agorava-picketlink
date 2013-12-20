@@ -5,25 +5,24 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.gastaldi.app.picketlink;
+package org.agorava.picketlink;
 
-import java.io.IOException;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.agorava.LinkedIn;
-import org.agorava.core.api.UserProfile;
-import org.agorava.core.api.oauth.OAuthService;
-import org.agorava.core.api.oauth.OAuthSession;
+import org.agorava.api.oauth.OAuthSession;
+import org.agorava.api.service.OAuthLifeCycleService;
+import org.agorava.spi.UserProfile;
+import org.apache.deltaspike.servlet.api.Web;
 import org.picketlink.annotations.PicketLink;
 import org.picketlink.authentication.BaseAuthenticator;
 import org.picketlink.credential.DefaultLoginCredentials;
 import org.picketlink.idm.credential.Credentials.Status;
-import org.picketlink.idm.model.SimpleUser;
+import org.picketlink.idm.model.basic.User;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Instance;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @ApplicationScoped
 @PicketLink
@@ -33,17 +32,14 @@ public class AgoravaAuthenticator extends BaseAuthenticator
    @Inject
    DefaultLoginCredentials credentials;
 
-   @Inject
-   @PicketLink
-   Instance<HttpServletRequest> request;
 
    @Inject
-   @PicketLink
+   @Web
    Instance<HttpServletResponse> response;
 
-   @Inject
-   @LinkedIn
-   OAuthService service;
+
+    @Inject
+    OAuthLifeCycleService lifeCycleService;
 
    // @Inject
    // private transient ProfileService profileService;
@@ -51,22 +47,25 @@ public class AgoravaAuthenticator extends BaseAuthenticator
    @Override
    public void authenticate()
    {
-      if (service.isConnected())
+
+      if (lifeCycleService.getCurrentSession().isConnected())
       {
-         OAuthSession session = service.getSession();
+
+
+          OAuthSession session =lifeCycleService.getCurrentSession();
          UserProfile userProfile = session.getUserProfile();
          credentials.setCredential(session.getAccessToken());
          setStatus(AuthenticationStatus.SUCCESS);
 
 //         LinkedInProfileFull userProfileFull = profileService.getUserProfileFull();
-         SimpleUser user = new SimpleUser(userProfile.getId());
+         User user = new User(userProfile.getId());
          user.setFirstName(userProfile.getFullName());
-         setAgent(user);
+         setAccount(user);
       }
       else
       {
 
-         String authorizationUrl = service.getAuthorizationUrl();
+         String authorizationUrl = lifeCycleService.startDanceFor("LinkedIn");
          try
          {
             response.get().sendRedirect(authorizationUrl);

@@ -5,15 +5,14 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 
-package org.gastaldi.app;
+package org.agorava.picketlink.demo;
 
-import java.io.Serializable;
+import org.picketlink.Identity;
 
 import javax.enterprise.context.SessionScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
-
-import org.picketlink.Identity;
+import java.io.Serializable;
 
 @Named
 @SessionScoped
@@ -32,7 +31,7 @@ public class UserBean implements Serializable
       }
       else
       {
-         System.out.println("AGENT: " + identity.getAgent());
+         System.out.println("AGENT: " + identity.getAccount());
       }
    }
 }
